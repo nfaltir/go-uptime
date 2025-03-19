@@ -6,18 +6,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/joho/godotenv" // Import dotenv package
 	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
-	targetURL     = "https://test.cofaexpress.com" // Replace with your site
 	checkInterval = 10 * time.Minute
 	dbFile        = "site_status.db"
 	httpTimeout   = 10 * time.Second
 	serverPort    = ":8080"
 )
+
+var targetURL string // Declare global variable
 
 type Status struct {
 	Timestamp time.Time `json:"timestamp"`
@@ -95,7 +98,6 @@ func getAllStatuses(db *sql.DB) ([]Status, error) {
 }
 
 func startHTTPServer(db *sql.DB) {
-	// /data endpoint (returns all statuses as JSON)
 	http.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
 		statuses, err := getAllStatuses(db)
 		if err != nil {
@@ -103,11 +105,10 @@ func startHTTPServer(db *sql.DB) {
 			return
 		}
 
-		// Format the timestamps explicitly for better JavaScript compatibility
 		formattedStatuses := make([]map[string]interface{}, len(statuses))
 		for i, s := range statuses {
 			formattedStatuses[i] = map[string]interface{}{
-				"timestamp": s.Timestamp.Format(time.RFC3339), // ISO8601 format
+				"timestamp": s.Timestamp.Format(time.RFC3339),
 				"online":    s.Online,
 				"latency":   s.Latency,
 			}
@@ -126,14 +127,26 @@ func startHTTPServer(db *sql.DB) {
 }
 
 func main() {
-	// Initialize database
+	// Load environment variables
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	// Set targetURL from environment variable
+	targetURL = os.Getenv("TARGET_URL")
+	if targetURL == "" {
+		log.Fatal("TARGET_URL is not set in the .env file")
+	}
+
+	// Initialize the database
 	db, err := initializeDB()
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
 
-	// Start the HTTP server in a goroutine
+	// Start the HTTP server
 	go startHTTPServer(db)
 
 	// Set up ticker for periodic checks
@@ -142,7 +155,6 @@ func main() {
 
 	log.Printf("Starting site monitoring for %s (checking every %v)", targetURL, checkInterval)
 
-	// Main loop for site monitoring
 	for {
 		select {
 		case t := <-ticker.C:
@@ -160,6 +172,7 @@ func main() {
 				Online:    online,
 				Latency:   latency,
 			}
+
 			if err := saveStatus(db, status); err != nil {
 				log.Printf("Failed to save status: %v", err)
 			}

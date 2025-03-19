@@ -2,7 +2,7 @@
 
 A Go-based application to track website uptime and latency, with dashboards built using Streamlit and Grafana.
 
-<br>
+<br><hr>
 
 
 ## Overview
@@ -13,8 +13,19 @@ This project monitors the uptime and latency of a web application, storing resul
 
 <br>
 
+## Project Setup
+
+- create  a `touch .env` file inside root folder
+- inside the file create an environment variable called `targetURL=<url for your site>`
+- run app `go run main.go`
+- to run the frontend end you might need to create a python environemnt first, then start frontend server. `streamlit run app.py`
+- to visuaize Grafana, you need to docker for installation.
+
+<br>
 
 ## Features
+
+<br><hr>
 
 ### Streamlit Dashboard
 - Built with the [Streamlit](https://streamlit.io/) Python framework.
@@ -42,3 +53,11 @@ This project monitors the uptime and latency of a web application, storing resul
 
 
 <br>
+
+## Notes
+
+Latency is relatively high—this is due to:
+- The hosting server configuration.
+- Rate-limiting on the monitored site.
+- The app pings the server every 10 minutes to check if it's online.
+- Future enhancements will include push notifications via Grafana alerting tools.

@@ -1,3 +1,4 @@
 docs.md
 /frontend/uptime-go
 site_status.db
+.env
