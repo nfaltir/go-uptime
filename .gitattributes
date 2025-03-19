@@ -1,1 +1,1 @@
-*.js linguist-language=javascript
+*.py linguist-detectable=false
